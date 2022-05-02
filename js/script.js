@@ -219,7 +219,7 @@ function updateProgress(e){
 function deleteBook(){
     let index = getIndex(id);
 
-    if(confirm(`Are you sure, you want to delete ${myLibrary[index].title} by ${myLibrary[index].author}`)){
+    if(confirm(`Are you sure, you want to delete "${myLibrary[index].title}" by "${myLibrary[index].author}"`)){
         setTimeout(() => {
             myLibrary.splice(index, 1);
             library.innerHTML = "";
