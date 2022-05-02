@@ -1,0 +1,17 @@
+.main-header{
+    height: 120px;
+    background-color: var(--primary-color);
+
+    #logo{
+        height: 100%;
+        padding: 1em;
+    }
+
+
+    svg{
+        height: 100%;
+        width:100%;
+        fill: var(--light-text-color);
+        filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.39));
+    }
+}

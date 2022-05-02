@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Cabin:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Dr+Sugiyama&display=swap");
+
+html{
+    --primary-color: hsl(202, 98%, 60%);
+    --primary-overlay-color: hsla(0, 0%, 0%, 0.7);
+    --secondary-color: hsl(45, 93%, 47%);
+    --bg-color: hsl(204, 94%, 94%);
+    --main-line-color: hsl(0, 0%, 77%);
+    --heading-text-color: hsl(240, 4%, 16%);
+    --regular-text-color: hsl(240, 5%, 26%);
+    --light-text-color: hsl(240, 5%, 96%);
+    --white-color: hsl(0, 0%, 100%);
+}
+// html[data-theme='dark'] {
+//     --primary-color: hsl(200, 98%, 39%);;
+//     --secondary-color: hsl(45, 93%, 47%);
+//     --bg-color: hsl(204, 94%, 94%);
+//     --strong-text-color: hsl(240, 4%, 16%);
+//     --regular-text-color: hsl(240, 5%, 26%);
+//     --light-text-color: hsl(240, 5%, 96%); 
+// }
+*{
+    box-sizing: border-box;
+    margin: 0;
+    text-decoration: none;
+}
