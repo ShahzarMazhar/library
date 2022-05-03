@@ -115,7 +115,11 @@ function sortBooks(e){
     }
 
     mode = (sortMode == "Recent") ? 'id' : sortMode.toLowerCase() ;
-    myLibrary.sort((a,b) => a[mode] > b[mode]);
+    myLibrary.sort((a,b) => {
+      const A = (a[mode]);
+      const B = (b[mode]);
+      return (A < B) ? -1 : (A > B) ? 1 : 0;
+          });
 
     library.innerHTML = "";
     e.target.textContent = sortMode;
