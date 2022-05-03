@@ -115,7 +115,7 @@ function sortBooks(e){
     }
 
     mode = (sortMode == "Recent") ? 'id' : sortMode.toLowerCase() ;
-    myLibrary.sort((a,b) => a[mode] >= b[mode]);
+    myLibrary.sort((a,b) => a[mode] > b[mode]);
 
     library.innerHTML = "";
     e.target.textContent = sortMode;
