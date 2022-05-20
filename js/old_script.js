@@ -6,23 +6,9 @@ function $(selector, context) {
     return (context || document).querySelector(selector);
 }
 
-//make easy document.create (including bulk create)
-function createElements(...elementName){
-    const result = [];
-    elementName.forEach(e => result.push(document.createElement(e)));
-    if(result.length == 1) return result[0];
-    return result;
+function newElement(elementName){
+    return document.createElement(elementName);
 }
-
-//make easy add Attribute (including bulk)
-
-function addAttribute(qualifiedName, ...pairsOfNodeAttribute){
-
-    pairsOfNodeAttribute.forEach(e => {
-        e[0].setAttribute(qualifiedName, e[1]);
-    })
-}
-
 
 function random(max=Number, min=0){
     return Math.floor(Math.random() * (max - min + 1) + min);
@@ -46,39 +32,34 @@ function addBookToLibrary(e) {
       e.target.reset()
 }
 
-class Book {
-    constructor(title, author, pages, progress, color) {
-        // Requirement 2: the constructor...
-        bookCount++;
-        this.id = bookCount;
-        this.title = title.toUpperCase();
-        this.author = author.toLowerCase();
-        this.pages = pages;
-        this.progress = progress;
-        this.color = color || `rgb(${random(255)}, ${random(255)}, ${random(255)})`;
-    }
+function Book(title, author, pages, progress, color) {
+  // Requirement 2: the constructor...
+    bookCount++;
+    this.id = bookCount;
+    this.title = title.toUpperCase();
+    this.author = author.toLowerCase();
+    this.pages = pages;
+    this.progress = progress;
+    this.color = color || `rgb(${random(255)}, ${random(255)}, ${random(255)})`
+}
 
-    get readStatus() {
-        if (this.progress == 0) {
-            return "New";
-        } else if (this.pages == this.progress) {
-            return "Finished";
-        } else {
-            return `${(this.progress * 100 / this.pages).toFixed(2)} %`;
-        }
+Book.prototype.readStatus = function(){
+    if(this.progress == 0){
+        return "New";
+    }else if(this.pages == this.progress){
+        return "Finished";
+    }else{
+        return `${(this.progress * 100 / this.pages).toFixed(2)} %`;
     }
+};
 
-    /**
-     * @param {number} number
-     */
-    set setProgress(number){
-        this.progress = number;
-    }
 
+function removeBookFromLibrary(){
+    
 }
 
 /*
----- card template for individual book ----
+---- card for individual book ----
 <div class="card">
     <div class="book">
         <h3 class="title">TITLE</h3>
@@ -95,28 +76,26 @@ class Book {
 function refreshLibraryUI(myLibrary){
     //Requirement 3: creating required elements and appending to the library
     for(let i=0; i < myLibrary.length; i++){
+        const card      = newElement('div');
+        const book      = newElement('div');
+        const title     = newElement('h3');
+        const author    = newElement('p');
+        const info      = newElement('div');
+        const p         = newElement('p');
+        const pIcon     = newElement('p');
+        const mdi       = newElement('span');
 
-        const [card, book, title, author, info, p, pIcon, mdi] = createElements('div', 'div', 'h3', 'p', 'div', 'p', 'p', 'span');
-
-        addAttribute('class', 
-            [card, 'card'],
-            [book, 'book'],
-            [title, 'title'],
-            [author, 'author'],
-            [info, 'info'],
-            [mdi, 'mdi mdi-dots-vertical mdi-rotate-90']
-            );
-
-        addAttribute('data-id',
-            [card, myLibrary[i].id]
-        );
-
-
+        card.className = 'card';
+        card.setAttribute('data-id', myLibrary[i].id)
+        book.className = 'book';
         book.style.backgroundColor = myLibrary[i].color;
+        title.className = 'title';
         title.textContent = myLibrary[i].title;
+        author.className = 'author';
         author.textContent = myLibrary[i].author;
-        p.textContent = myLibrary[i].readStatus;
-
+        info.className = 'info';
+        p.textContent = myLibrary[i].readStatus();
+        mdi.className = 'mdi mdi-dots-vertical mdi-rotate-90';
         pIcon.appendChild(mdi);
         info.append(p,pIcon);
         book.append(title, author);
@@ -148,8 +127,10 @@ function sortBooks(e){
 }
 
 function showOption(e){
-    const [list, add, edit, read] = createElements('ul', 'li', 'li', 'li');
-
+    const list  = newElement('ul');
+    const add   = newElement('li');
+    const edit  = newElement('li');
+    const read  = newElement('li');
     id = e.target.getAttribute('data-id');
     add.textContent = 'Add Progress';
     add.addEventListener('click', openAddProgress);
@@ -176,48 +157,41 @@ function getIndex(id){
     return index;
 }
 
-function getId(event){
-    const id = event.target.closest('.card').getAttribute('data-id');
-    let index
-    myLibrary.forEach(e => {if(e.id == id)index = myLibrary.indexOf(e)});
-    return index;
-}
-
 function openAddProgress(e){
-    const book = myLibrary[getId(e)];
-    $('label', modelAddProgress).textContent = book.title;
-    progressDisplay.value = `Completed: ${book.progress}/${book.pages} Pages`;
-    addProgressInput.max = book.pages;
-    addProgressInput.value = book.progress;
+    let index = getIndex(id);
+    $('label', modelAddProgress).textContent = myLibrary[index].title;
+    progressDisplay.value = `Completed: ${myLibrary[index].progress}/${myLibrary[id - 1].pages} Pages`;
+    addProgressInput.max = myLibrary[index].pages;
+    addProgressInput.value = myLibrary[index].progress;
     modelAddProgress.classList.add('open');
 }
 
 function openEditBook(e){
-    const book = myLibrary[getId(e)]
-    editBookPreview.style.backgroundColor = book.color;
-    editTitlePreview.textContent = book.title;
-    editAuthorPreview.textContent = book.author;
-    editTitle.value = book.title;
-    editAuthor.value = book.author;
-    editPages.value = book.pages;
-    editCompleted.value = book.progress;
-    editCompleted.max = book.pages;
-    editFinished.checked = book.pages == book.progress;
+    let index = getIndex(id);
+    editBookPreview.style.backgroundColor = myLibrary[index].color;
+    editTitlePreview.textContent = myLibrary[index].title;
+    editAuthorPreview.textContent = myLibrary[index].author;
+    editTitle.value = myLibrary[index].title;
+    editAuthor.value = myLibrary[index].author;
+    editPages.value = myLibrary[index].pages;
+    editCompleted.value = myLibrary[index].progress;
+    editCompleted.max = myLibrary[index].pages;
+    editFinished.checked = myLibrary[index].pages == myLibrary[index].progress;
     modelEditBook.classList.add('open');
 }
 
 function saveEditBook(e){
     e.preventDefault();
-    const book = myLibrary[getIndex(id)]
+    let index = getIndex(id);
     const title     = e.target.title.value;
     const author    = e.target.author.value;
     const pages     = e.target.pages.value;
     const progress  = e.target.completed.value;
 
-    book.title = title;
-    book.author = author;
-    book.pages = pages;
-    book.progress  = progress;
+    myLibrary[index].title = title;
+    myLibrary[index].author = author;
+    myLibrary[index].pages = pages;
+    myLibrary[index].progress  = progress;
 
     setTimeout(() => {
         library.innerHTML = "";
@@ -237,7 +211,7 @@ function updateProgress(e){
     const progress  = e.target.progress.value;
     e.preventDefault();
 
-    myLibrary[index].setProgress = progress;
+    myLibrary[index].progress = +progress;
 
     setTimeout(() => {
         library.innerHTML = "";
