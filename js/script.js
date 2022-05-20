@@ -36,7 +36,7 @@ function addBookToLibrary(e) {
       const title     = e.target.title.value;
       const author    = e.target.author.value;
       const pages     = e.target.pages.value;
-      const progress  = e.target.completed.value;
+      const progress  = e.target.completed.value || 0;
       
       // book = new Book("The Child who never grew", 'pearl s. buck', 143, 15, ['red']);
       const book = new Book(title, author, pages, progress);
