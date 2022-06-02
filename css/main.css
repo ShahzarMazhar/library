@@ -128,13 +128,11 @@ html {
   color: var(--light-text-color);
   z-index: 1;
   text-align: center;
-  text-transform: uppercase;
   padding: 10px;
 }
 
 .main-section .library .card .book p {
   font-family: 'Cabin', sans-serif;
-  text-transform: capitalize;
 }
 
 .main-section .library .card .book::before, .main-section .library .card .book::after {
@@ -316,6 +314,11 @@ html {
   padding: 5px;
   font-size: 1rem;
   width: 100%;
+}
+
+.add-book-form .form-box form .input:not(.input-finished) input:invalid:not(:focus) {
+  -webkit-box-shadow: 0 0 5px red;
+          box-shadow: 0 0 5px red;
 }
 
 .add-book-form .form-box form input[type=checkbox] {
@@ -663,6 +666,11 @@ html {
   padding: 5px;
   font-size: 1rem;
   width: 100%;
+}
+
+.edit-book-form .form-box form .input:not(.input-finished) input:invalid:not(:focus) {
+  -webkit-box-shadow: 0 0 5px red;
+          box-shadow: 0 0 5px red;
 }
 
 .edit-book-form .form-box form input[type=checkbox] {

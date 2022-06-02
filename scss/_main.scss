@@ -28,14 +28,12 @@
                     color: var(--light-text-color);
                     z-index: 1;
                     text-align: center;
-                    text-transform: uppercase;
                     padding: 10px;
                 }
                 
                 p{
                     @extend h3;
                     font-family: 'Cabin', sans-serif;
-                    text-transform: capitalize;
                 }
 
                 &::before{
