@@ -1,75 +1,16 @@
-// make life easy //
-function $_(selector, context) {
-  return (context || document).querySelectorAll(selector);
-}
-function $(selector, context) {
-  return (context || document).querySelector(selector);
-}
-
-//make easy document.create (including bulk create)
-function createElements(...elementName) {
-  const result = [];
-  elementName.forEach((e) => result.push(document.createElement(e)));
-  if (result.length == 1) return result[0];
-  return result;
-}
-
-//make easy add Attribute (including bulk)
-
-function addAttribute(qualifiedName, ...pairsOfNodeAttribute) {
-  pairsOfNodeAttribute.forEach((e) => {
-    e[0].setAttribute(qualifiedName, e[1]);
-  });
-}
-
-function random(max = Number, min = 0) {
-  return Math.floor(Math.random() * (max - min + 1) + min);
-}
-// life is easy //
-
-function addBookToLibrary(e) {
-  // do stuff here
-  e.preventDefault();
-  const book = {
-    title: e.target.title.value,
-    author: e.target.author.value,
-    pages: parseInt(e.target.pages.value),
-    progress: parseInt(e.target.completed.value) || 0,
-  }
-
-  if(validate(e.target.title, 'title') && validate(e.target.author, 'author') && validate(e.target.pages, 'pages')){
-      // book = new Book("The Child who never grew", 'pearl s. buck', 143, 15, ['red']);
-      
-      myLibrary.push(new Book(book));
-      refreshLibraryUI([myLibrary[myLibrary.length - 1]]);
-      setTimeout(() => {
-        modelAddBook.classList.remove('open');
-      }, 1000);
-      e.target.reset();
-  }
-
-}
-
 class Book {
   constructor(book) {
-    // Requirement 2: the constructor...
-    bookCount++;
-    this.id = bookCount;
-    this.title = book.title.toUpperCase();
-    this.author = toTitleCase(book.author);
+
+    this.id = book.id;
+    this.title = book.title;
+    this.author = book.author;
     this.pages = book.pages;
     this.progress = book.progress;
-    this.color = book.color || `rgb(${random(255)}, ${random(255)}, ${random(255)})`;
+    this.color = book.color || getRandomColor();
   }
 
   get readStatus() {
-    if (this.progress == 0) {
-      return 'New';
-    } else if (this.pages == this.progress) {
-      return 'Finished';
-    } else {
-      return `${((this.progress * 100) / this.pages).toFixed(2)} %`;
-    }
+    return +((this.progress * 100) / this.pages).toFixed(2);
   }
 
   /**
@@ -80,90 +21,77 @@ class Book {
   }
 }
 
-/*
----- card template for individual book ----
-<div class="card">
-    <div class="book">
-        <h3 class="title">TITLE</h3>
-        <p class="author">Author</p>
-    </div>
-    <div class="info">
-        <p>Progress</p>
-        <p><span class="mdi mdi-dots-vertical mdi-rotate-90"></span></p>
-    </div>
-</div>
-*/
 
-function refreshLibraryUI(myLibrary) {
-  //Requirement 3: creating required elements and appending to the library
-  for (let i = 0; i < myLibrary.length; i++) {
-    const [card, book, title, author, info, p, pIcon, mdi] = createElements(
-      'div',
-      'div',
-      'h3',
-      'p',
-      'div',
-      'p',
-      'p',
-      'span'
-    );
-
-    addAttribute(
-      'class',
-      [card, 'card'],
-      [book, 'book'],
-      [title, 'title'],
-      [author, 'author'],
-      [info, 'info'],
-      [mdi, 'mdi mdi-dots-vertical mdi-rotate-90']
-    );
-
-    addAttribute('data-id', [card, myLibrary[i].id]);
-
-    book.style.backgroundColor = myLibrary[i].color;
-    title.textContent = myLibrary[i].title;
-    author.textContent = myLibrary[i].author;
-    p.textContent = myLibrary[i].readStatus;
-
-    pIcon.appendChild(mdi);
-    info.append(p, pIcon);
-    book.append(title, author);
-    card.append(book, info);
-
-    library.appendChild(card);
-    addEvent(card);
-  }
-}
-
-function sortBooks(e) {
-  switch (sortMode) {
-    case 'Author':
-      sortMode = 'Title';
-      break;
-    case 'Title':
-      sortMode = 'Recent';
-      break;
-    case 'Recent':
-      sortMode = 'Author';
-      break;
+const LIBRARY = (() => {
+  let id = 1; // initial id
+  const books = [];
+  const sortOptions = ['title', 'author', 'recent'];
+  let sortMode = 0;
+  
+  const addBook = (book) => {
+    const _book = new Book({...book, id: `book-${id++}`});
+    books.push(_book);
+    UI_Stuff.addBook(_book);
   }
 
-  mode = sortMode == 'Recent' ? 'id' : sortMode.toLowerCase();
-  myLibrary.sort((a, b) => {
-    const A = a[mode];
-    const B = b[mode];
-    return A < B ? -1 : A > B ? 1 : 0;
-  });
+  const removeBook = (e) => {
+    const id = e.target.closest('[data-id]').dataset.id;
+    const book = getBook(id);
+    DomRef.modelEditBook.classList.remove('open');
 
-  library.innerHTML = '';
-  e.target.textContent = sortMode;
-  refreshLibraryUI(myLibrary);
-}
+    if(confirm(`Are you sure, you want to delete "${book.title}" by "${book.author}"?`)){
+      document.querySelector(`.card[data-id="${id}"]`).remove();
+      books.splice(books.indexOf(book), 1);
+    }
+  }
 
-function showOption(e) {
+  const setProgress = (id, progress) => {
+    const book = books.find(book => book.id === id);
+    book.setProgress = progress;
+    UI_Stuff.updateBook(book);
+  }
+
+  // sorts books by title, author, or recent, return SortMode and call to refreshUi
+  const sortBooks = () => {
+    const _sortMode = sortOptions[sortMode++ % sortOptions.length]; 
+    const mode = _sortMode == 'recent' ? 'id' : _sortMode;
+    books.sort((a, b) => {
+      return a[mode] < b[mode] ? -1 : a[mode] > b[mode] ? 1 : 0;
+    });
+    UI_Stuff.refreshUi(books);
+    return toTitleCase(_sortMode);
+  }
+
+  const getBook = (id) => {
+    return books.find(book => book.id === id);
+  }
+
+  return { books, addBook, removeBook, setProgress, sortBooks, getBook };
+})();
+
+// Everything related to the UI
+const UI_Stuff = (() => {
+  // Card Element Template
+  const library = document.querySelector('.library');
+  const [card, book, title, author, info, p, pIcon, mdi] = createElements(
+    'div', 'div', 'h3', 'p', 'div', 'p', 'p', 'span'
+  );
+
+  card.className = 'card';
+  book.className = 'book';
+  title.className = 'title';
+  author.className = 'author';
+  info.className = 'info';
+  p.className = 'progress';
+  mdi.className = 'mdi mdi-dots-vertical mdi-rotate-90';
+
+  pIcon.appendChild(mdi);
+  info.append(p, pIcon);
+  book.append(title, author);
+  card.append(book, info);
+
+// Option Element
   const [list, add, edit, read] = createElements('ul', 'li', 'li', 'li');
-
-  id = e.target.getAttribute('data-id');
   add.textContent = 'Add Progress';
   add.addEventListener('click', openAddProgress);
 
@@ -174,215 +102,322 @@ function showOption(e) {
   read.addEventListener('click', markAsRead);
 
   list.append(add, edit, read);
-  $('.book', e.target).appendChild(list);
-}
 
-function addEvent(items) {
-  items.addEventListener('mouseenter', showOption);
-  items.addEventListener('mouseleave', (e) => $('ul', e.target).remove());
-  $('span', items).addEventListener('click', openEditBook);
-}
 
-function getIndex(id) {
-  let index;
-  myLibrary.forEach((e) => {
-    if (e.id == id) index = myLibrary.indexOf(e);
-  });
-  return index;
-}
+  // add a book card to ui
+  const addBook = (book) => {
+    const _card = card.cloneNode(true);
+    _card.setAttribute('data-id', book.id);
+    library.appendChild(_card);
+    addEvent(_card);
+    updateBook(book);
+  }
 
-function getId(event) {
-  const id = event.target.closest('.card').getAttribute('data-id');
-  let index;
-  myLibrary.forEach((e) => {
-    if (e.id == id) index = myLibrary.indexOf(e);
-  });
-  return index;
-}
-
-function openAddProgress(e) {
-  const book = myLibrary[getId(e)];
-  $('label', modelAddProgress).textContent = book.title;
-  progressDisplay.value = `Completed: ${book.progress}/${book.pages} Pages`;
-  addProgressInput.max = book.pages;
-  addProgressInput.value = book.progress;
-  modelAddProgress.classList.add('open');
-}
-
-function openEditBook(e) {
-  const book = myLibrary[getId(e)];
-  editBookPreview.style.backgroundColor = book.color;
-  editTitlePreview.textContent = book.title;
-  editAuthorPreview.textContent = book.author;
-  editTitle.value = book.title;
-  editAuthor.value = book.author;
-  editPages.value = book.pages;
-  editCompleted.value = book.progress;
-  editCompleted.max = book.pages;
-  editFinished.checked = book.pages == book.progress;
-  modelEditBook.classList.add('open');
-}
-
-function saveEditBook(e) {
-  e.preventDefault();
-  const book = myLibrary[getIndex(id)];
-  const title = e.target.title.value;
-  const author = e.target.author.value;
-  const pages = e.target.pages.value;
-  const progress = e.target.completed.value;
-
-  book.title = title;
-  book.author = author;
-  book.pages = pages;
-  book.progress = progress;
-
-  setTimeout(() => {
+  const refreshUi = (books) => {
     library.innerHTML = '';
-    refreshLibraryUI(myLibrary);
-    modelEditBook.classList.remove('open');
-  }, 1000);
-}
+    books.forEach(addBook);
+    console.log('removed');
+  }
 
-function updateDisplay(e) {
-  let index = getIndex(id);
-  progressDisplay.value = `Completed: ${e.target.value}/${myLibrary[index].pages} Pages`;
-}
 
-function updateProgress(e) {
-  let index = getIndex(id);
-  const progress = e.target.progress.value;
-  e.preventDefault();
+  // update a book card in ui
+  const updateBook = (book) => {
+    const _card = library.querySelector(`[data-id="${book.id}"]`)
+    _card.querySelector('.title').textContent = book.title;
+    _card.querySelector('.author').textContent = book.author;
+    _card.querySelector('.book').style.backgroundColor = book.color;
+    setProgress(book.id, book.readStatus);
+  }
 
-  myLibrary[index].setProgress = progress;
+  function openAddProgress(e){
+    const bookId = e.target.closest('[data-id]').getAttribute('data-id');
+    const book = LIBRARY.getBook(bookId);
+    const inputRange = DomRef.modelAddProgress.querySelector('input[type=range]');
+    const display = DomRef.modelAddProgress.querySelector('input[type=text]');
+    display.value = `Completed: ${book.progress}/${book.pages} Pages`;
+    inputRange.max = book.pages;
+    inputRange.value = book.progress;
+    DomRef.modelAddProgress.setAttribute('data-id', bookId);
+    DomRef.modelAddProgress.querySelector('label').textContent = `Add Progress for ${book.title}`;
+    DomRef.modelAddProgress.classList.add('open');
+  }
 
-  setTimeout(() => {
-    library.innerHTML = '';
-    refreshLibraryUI(myLibrary);
-    modelAddProgress.classList.remove('open');
-  }, 500);
-}
+  function openEditBook(e) {
+    const bookId = e.target.closest('[data-id]').getAttribute('data-id');
+    const book = LIBRARY.getBook(bookId);
+    DomRef.modelEditBook.querySelector('input[name=title]').value = book.title;
+    DomRef.modelEditBook.querySelector('input[name=author]').value = book.author;
+    DomRef.modelEditBook.querySelector('input[name=pages]').value = book.pages;
+    DomRef.modelEditBook.querySelector('input[name=completed]').max = book.pages;
+    DomRef.modelEditBook.querySelector('input[name=completed]').value = book.progress;
+    DomRef.modelEditBook.querySelector('input[name=finished]').checked = book.pages == book.progress;
+    DomRef.editBookPreview.style.backgroundColor = book.color;
+    DomRef.editTitlePreview.textContent = book.title;
+    DomRef.editAuthorPreview.textContent = book.author;
+    DomRef.modelEditBook.classList.add('open');
+    DomRef.modelEditBook.setAttribute('data-id', bookId);
+  }
 
-function deleteBook() {
-  let index = getIndex(id);
+  function markAsRead(e){
+    const bookId = e.target.closest('[data-id]').getAttribute('data-id');
+    const book = LIBRARY.getBook(bookId);
+    book.setProgress = book.pages;
+    LIBRARY.setProgress(bookId, book.pages);
+    updateBook(book);
+  }
 
-  if (
-    confirm(
-      `Are you sure, you want to delete "${myLibrary[index].title}" by "${myLibrary[index].author}"`
-    )
-  ) {
-    setTimeout(() => {
-      myLibrary.splice(index, 1);
-      library.innerHTML = '';
-      refreshLibraryUI(myLibrary);
-      modelEditBook.classList.remove('open');
-    }, 500);
+  const liveProgressUpdate = (e) => {
+    const bookId = e.target.closest('[data-id]').getAttribute('data-id');
+    const book = LIBRARY.getBook(bookId);
+    const inputRange = e.target;
+    const display = DomRef.modelAddProgress.querySelector('input[type=text]');
+    display.value = `Completed: ${inputRange.value}/${book.pages} Pages`;
+  }
+
+  // remove a book card from ui
+  const removeBook = (id) => {
+    const _card = library.querySelector(`[data-id="${id}"]`);
+    library.removeChild(_card);
+  }
+
+  // set progress of a book
+  const setProgress = (id, progress) => {
+    const _readStatus = progress === 0 ? 'New' 
+      : progress === 100 ? 'Finished' 
+      : `${progress}%`;
+    const _card = library.querySelector(`[data-id="${id}"]`);
+    _card.querySelector('.progress').textContent = _readStatus;
+  }
+
+  // show option on cards
+  const showOption = (e) => {
+    e.target.querySelector('.book').appendChild(list);
+  }
+
+  // add event listeners to a book card
+  const addEvent = (item) => {
+    item.addEventListener('mouseenter', showOption);
+    item.addEventListener('mouseleave', (e) => e.target.querySelector('ul').remove());
+    item.querySelector('span').addEventListener('click', openEditBook);
+  }
+  return { addBook, removeBook, setProgress, refreshUi, liveProgressUpdate, updateBook };
+})();
+
+// form related stuff
+const FORM_Stuff = (() => {
+  const addBook = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    if(
+      validateInput(form.title) && 
+      validateInput(form.author) && 
+      validateInput(form.pages)){
+
+      const book = {
+        title: form.title.value,
+        author: form.author.value,
+        pages: parseInt(form.pages.value),
+        progress: parseInt(form.completed.value) || 0,
+      }
+      LIBRARY.addBook(book);
+      DomRef.modelAddBook.classList.remove('open');
   }
 }
 
-function markAsRead(e) {
-  let index = getIndex(id);
-  const status = $(
-    '.info p',
-    e.target.parentElement.parentElement.parentElement
-  );
+  const updateBook = (e) => {
+    e.preventDefault();
+    const bookId = DomRef.modelEditBook.getAttribute('data-id');
+    const book = LIBRARY.getBook(bookId);
+    const form = e.target;
+    book.title = form.title.value;
+    book.author = form.author.value;
+    book.pages = parseInt(form.pages.value);
+    book.progress = parseInt(form.completed.value);
 
-  setTimeout(() => {
-    myLibrary[index].progress = myLibrary[index].pages;
+    UI_Stuff.updateBook(book);
+    DomRef.modelEditBook.classList.remove('open');
+  }
 
-    status.textContent = `Finished`;
-  }, 500);
-}
+  const addProgress = (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const progress = parseInt(form.progress.value);
+    const bookId = form.closest('[data-id]').getAttribute('data-id');
+    LIBRARY.setProgress(bookId, progress);
+    DomRef.modelAddProgress.classList.remove('open');
+  }
 
-const library = $('.library');
-const btnAddBook = $('#add-book');
-const modelAddBook = $('.add-book-form');
-const modelAddProgress = $('.add-progress');
-const modelEditBook = $('.edit-book-form');
-const btnCancelAddBook = $('span', modelAddBook);
-const btnCancelEditBook = $('span', modelEditBook);
-const btnCancelAddProgress = $('span', modelAddProgress);
-const progressDisplay = $('input[type=text]', modelAddProgress);
-const addProgressInput = $('input[type=range]', modelAddProgress);
-const formAddBook = $('.add-book-form form');
-const formAddProgress = $('.add-progress form');
-const formEditBook = $('.edit-book-form form');
-const btnSort = $('#sort-by');
-const pages = $('#pages');
-const read = $('#completed');
-const completed = $('#completed');
-const finished = $('#finished');
+  const removeBook = () => {}
 
-const editBookPreview = $('.book', modelEditBook);
-const editTitlePreview = $('.title', modelEditBook);
-const editAuthorPreview = $('.author', modelEditBook);
-const editTitle = $('#edit-title', modelEditBook);
-const editAuthor = $('#edit-author', modelEditBook);
-const editPages = $('#edit-pages', modelEditBook);
-const editCompleted = $('#edit-completed', modelEditBook);
-const editFinished = $('#edit-finished', modelEditBook);
-const btnDeleteBook = $('#delete-book', modelEditBook);
+  const changePages = (e) => {
+    const form = e.target.closest('form');
+    const pages = e.target.value;
+    const completed = form.querySelector('input[name="completed"]');
+    if(pages > 0){
+      completed.max = pages;
+      completed.value = Math.min(completed.value, pages);
+    }
+    changeProgress(completed);
+  }
+  const changeProgress = (e) => {
+    const form = e.target ? e.target.closest('form') : e.closest('form');
+    const completed = e.target ? e.target : e; // tweak for calling manually
+    const pages = form.querySelector('input[name="pages"]');
+    const finished = form.querySelector('input[name="finished"]');
+    if(+completed.value >= +pages.value){
+      completed.value = +pages.value;
+      finished.checked = true;
+      
+    }
+    if(completed.value < +pages.value){
+      finished.checked = false;
+    }
+    
+  }
+  const changeFinished = (e) => {
+    const form = e.target.closest('form');
+    const completed = form.querySelector('input[name="completed"]');
+    const pages = form.querySelector('input[name="pages"]').value;
+    if(e.target.checked){
+      completed.value = pages;
+    }else{
+      completed.value = 0;
+    }
+  }
 
-btnAddBook.addEventListener('click', () => modelAddBook.classList.add('open'));
-btnCancelAddBook.addEventListener('click', () =>
-  modelAddBook.classList.remove('open')
-);
-btnCancelAddProgress.addEventListener('click', () =>
-  modelAddProgress.classList.remove('open')
-);
-btnCancelEditBook.addEventListener('click', () =>
-  modelEditBook.classList.remove('open')
-);
-formAddBook.addEventListener('submit', addBookToLibrary);
-formAddProgress.addEventListener('submit', updateProgress);
-formEditBook.addEventListener('submit', saveEditBook);
 
-// Quick patch to validate the form, it's not the best way but it works
-$('#title').addEventListener('input', e => {
-    validate(e.target, 'title');
-})
-$('#author').addEventListener('input', e => {
-    validate(e.target, 'author');
-})
-$('#pages').addEventListener('input', e => {
-    validate(e.target, 'pages');
-})
+  return { addBook, removeBook, changePages, changeProgress, changeFinished, addProgress, updateBook };
+})();
 
-btnSort.addEventListener('click', sortBooks);
-btnDeleteBook.addEventListener('click', deleteBook);
-pages.addEventListener('input', (e) => (read.max = e.target.value));
-addProgressInput.addEventListener('input', updateDisplay);
-editTitle.addEventListener('input', (e) => {
-    validate(e.target, 'title');
+// custom validity message
+function validateInput(input){
+  const type = input.name;
+
+  if(!isValid(input, type)){
+    input.setCustomValidity(CUSTOM_VALIDITY_MESSAGES[type].required);
+    input.reportValidity();
+  } else {
+    input.setCustomValidity('');
+  }
+  return isValid(input, type);
+};
+
+// validating input with type
+function isValid(input, type){
+  if(type === 'title' || type === 'author'){
+    return input.value.length > 0;
+  }
+  if(type === 'pages'){
+    return +input.value > 0;
+  }
+};
+
+// convert string to title case
+function toTitleCase(str) {
+  return str.replace(/\w\S*/g, (txt) => {
+    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+  });
+};
+
+// make easy document.create (including bulk create)
+function createElements(...elementName) {
+  const result = [];
+  elementName.forEach((e) => result.push(document.createElement(e)));
+  if (result.length == 1) return result[0];
+  return result;
+};
+
+// getting random number
+function getRandomNumber(max = Number, min = 0) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+};
+
+// getting random color
+function getRandomColor() {
+  return `rgb(${getRandomNumber(255)}, ${getRandomNumber(255)}, ${getRandomNumber(255)})`;
+};
+
+const DomRef = (() => {
+const modelAddBook = document.querySelector('.add-book-form');
+const modelAddProgress = document.querySelector('.add-progress');
+const modelEditBook = document.querySelector('.edit-book-form');
+const editBookPreview = modelEditBook.querySelector('.book');
+const editTitlePreview = modelEditBook.querySelector('.title');
+const editAuthorPreview =  modelEditBook.querySelector('.author');
+
+
+// sort books button event listener
+  document.querySelector('#sort-by')
+    .addEventListener('click', (e) => {
+    e.target.textContent = LIBRARY.sortBooks();
+  });
+
+// add listener to validate input on change
+  ['title', 'author', 'pages'].forEach(field => {
+    const inputs = document.querySelectorAll(`[name='${field}']`);
+    inputs.forEach(input =>
+      input.addEventListener('input', e => validateInput(e.target))
+      );
+  })
+
+// getting pages to update progress.max, add or edit book form
+document.querySelectorAll('[name="pages"]').forEach(input =>{
+  input.addEventListener('input',FORM_Stuff.changePages);
+});
+
+// getting progress to update finished, add or edit book form
+document.querySelectorAll('[name="completed"]').forEach(input =>{
+  input.addEventListener('input',FORM_Stuff.changeProgress);
+});
+
+// getting finished to update progress, add or edit book form
+document.querySelectorAll('[name="finished"]').forEach(input =>{
+  input.addEventListener('change',FORM_Stuff.changeFinished);
+});
+
+// submit event Add book form
+modelAddBook.querySelector('form')
+.addEventListener('submit', FORM_Stuff.addBook);
+
+// open add book form
+document.querySelector('#add-book')
+  .addEventListener('click', () => modelAddBook.classList.add('open'));
+
+// close add book form
+modelAddBook.querySelector('.mdi-close')
+  .addEventListener('click', () => modelAddBook.classList.remove('open'));
+
+
+// submit event Add progress form
+modelAddProgress.querySelector('form')
+  .addEventListener('submit', FORM_Stuff.addProgress);
+
+// close add progress form
+modelAddProgress.querySelector('.mdi-plus')
+  .addEventListener('click', () => modelAddProgress.classList.remove('open'));
+
+// update display value on change of progress
+modelAddProgress.querySelector('input[type="range"]')
+  .addEventListener('input', UI_Stuff.liveProgressUpdate);
+
+// submit event Edit book form
+modelEditBook.querySelector('form')
+  .addEventListener('submit', FORM_Stuff.updateBook);
+
+// close edit book form
+modelEditBook.querySelector('.mdi-close')
+  .addEventListener('click', () => modelEditBook.classList.remove('open'));
+
+modelEditBook.querySelector('#edit-title').addEventListener('input', (e) => {
     editTitlePreview.textContent = e.target.value;
 });
-editAuthor.addEventListener('input', (e) => {
+modelEditBook.querySelector('#edit-author').addEventListener('input', (e) => {
     editAuthorPreview.textContent = e.target.value;
-    validate(e.target, 'author');
-});
-editPages.addEventListener('input', (e) => {
-    validate(e.target, 'pages');
-});
-editFinished.addEventListener('change', (e) => {
-    editCompleted.value = e.target.checked ? editPages.value : 0;
-});
-editCompleted.addEventListener('input', (e) => {
-    editFinished.checked = e.target.value == editPages.value;
-});
-finished.addEventListener('change', (e) => {
-    completed.value = e.target.checked ? pages.value : 0;
-
-});
-completed.addEventListener('input', (e) => {
-  finished.checked = e.target.value == pages.value;
 });
 
-//Default Values
-let sortMode = 'Recent';
-let bookCount = 0;
-let activeOption = 0;
+modelEditBook.querySelector('#delete-book').addEventListener('click', LIBRARY.removeBook);
 
-let myLibrary = [new Book(defaultBooks[0]),new Book(defaultBooks[1]),new Book(defaultBooks[2])];
+    return { modelAddBook, modelAddProgress, modelEditBook, editBookPreview, editTitlePreview, editAuthorPreview };
+})();
 
-
-
-refreshLibraryUI(myLibrary);
+defaultBooks.forEach((book) => LIBRARY.addBook(book));

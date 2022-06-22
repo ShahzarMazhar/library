@@ -250,16 +250,16 @@ html {
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
-  -webkit-transition: opacity 0.4s, -webkit-transform 0.5s, -webkit-clip-path 1s;
-  transition: opacity 0.4s, -webkit-transform 0.5s, -webkit-clip-path 1s;
-  transition: transform 0.5s, clip-path 1s, opacity 0.4s;
-  transition: transform 0.5s, clip-path 1s, opacity 0.4s, -webkit-transform 0.5s, -webkit-clip-path 1s;
+  -webkit-transition: opacity 0.4s, -webkit-transform 0.5s, -webkit-clip-path 0.5s;
+  transition: opacity 0.4s, -webkit-transform 0.5s, -webkit-clip-path 0.5s;
+  transition: transform 0.5s, clip-path 0.5s, opacity 0.4s;
+  transition: transform 0.5s, clip-path 0.5s, opacity 0.4s, -webkit-transform 0.5s, -webkit-clip-path 0.5s;
+  -webkit-transform: scale(0);
+          transform: scale(0);
   z-index: 3;
   opacity: 0;
-  -webkit-transform: scale(0.1) translate(440%, 440%);
-          transform: scale(0.1) translate(440%, 440%);
-  -webkit-clip-path: circle(30%);
-          clip-path: circle(30%);
+  -webkit-clip-path: circle(0);
+          clip-path: circle(0);
 }
 
 .add-book-form .form-box {
@@ -347,8 +347,8 @@ html {
 }
 
 .add-book-form.open {
-  -webkit-transform: scale(1) translate(0, 0);
-          transform: scale(1) translate(0, 0);
+  -webkit-transform: scale(1);
+          transform: scale(1);
   -webkit-clip-path: circle(100%);
           clip-path: circle(100%);
   z-index: 4;
