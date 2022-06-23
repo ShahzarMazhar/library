@@ -28,8 +28,24 @@ const LIBRARY = (() => {
   const sortOptions = ['title', 'author', 'recent'];
   let sortMode = 0;
   
+
+  const updateId = (bookId) => {
+    if(bookId) id = Math.max(id, parseInt(bookId.split('-')[1]) + 1);
+
+  }
+
   const addBook = (book) => {
-    const _book = new Book({...book, id: `book-${id++}`});
+    const _book = new Book({...book, id: book.id || getNextId()});
+    books.push(_book);
+    UI_Stuff.addBook(_book);
+    if(FireBase_Stuff.isLoggedIn){
+      FireBase_Stuff.addBook(_book);
+    }
+  }
+
+  const loadBook = (book) => {
+    updateId(book.id);
+    const _book = new Book(book);
     books.push(_book);
     UI_Stuff.addBook(_book);
   }
@@ -42,6 +58,9 @@ const LIBRARY = (() => {
     if(confirm(`Are you sure, you want to delete "${book.title}" by "${book.author}"?`)){
       document.querySelector(`.card[data-id="${id}"]`).remove();
       books.splice(books.indexOf(book), 1);
+      if(FireBase_Stuff.isLoggedIn){
+        FireBase_Stuff.deleteBook(id);
+      }
     }
   }
 
@@ -49,7 +68,12 @@ const LIBRARY = (() => {
     const book = books.find(book => book.id === id);
     book.setProgress = progress;
     UI_Stuff.updateBook(book);
+    if(FireBase_Stuff.isLoggedIn){
+      FireBase_Stuff.addBook(book);
+    }
   }
+
+  const getNextId = () => `book-${id++}`;
 
   // sorts books by title, author, or recent, return SortMode and call to refreshUi
   const sortBooks = () => {
@@ -66,7 +90,9 @@ const LIBRARY = (() => {
     return books.find(book => book.id === id);
   }
 
-  return { books, addBook, removeBook, setProgress, sortBooks, getBook };
+  const isEmpty = () => books.length === 0;
+
+  return { isEmpty, addBook, removeBook, setProgress, sortBooks, getBook, getNextId, loadBook };
 })();
 
 // Everything related to the UI
@@ -76,7 +102,6 @@ const UI_Stuff = (() => {
   const [card, book, title, author, info, p, pIcon, mdi] = createElements(
     'div', 'div', 'h3', 'p', 'div', 'p', 'p', 'span'
   );
-
   card.className = 'card';
   book.className = 'book';
   title.className = 'title';
@@ -103,9 +128,9 @@ const UI_Stuff = (() => {
 
   list.append(add, edit, read);
 
-
   // add a book card to ui
   const addBook = (book) => {
+
     const _card = card.cloneNode(true);
     _card.setAttribute('data-id', book.id);
     library.appendChild(_card);
@@ -116,7 +141,6 @@ const UI_Stuff = (() => {
   const refreshUi = (books) => {
     library.innerHTML = '';
     books.forEach(addBook);
-    console.log('removed');
   }
 
 
@@ -214,13 +238,15 @@ const FORM_Stuff = (() => {
       validateInput(form.pages)){
 
       const book = {
-        title: form.title.value,
-        author: form.author.value,
+        title: form.title.value.toUpperCase(),
+        author: toTitleCase(form.author.value),
         pages: parseInt(form.pages.value),
         progress: parseInt(form.completed.value) || 0,
       }
+
       LIBRARY.addBook(book);
       DomRef.modelAddBook.classList.remove('open');
+      form.reset();
   }
 }
 
@@ -236,6 +262,10 @@ const FORM_Stuff = (() => {
 
     UI_Stuff.updateBook(book);
     DomRef.modelEditBook.classList.remove('open');
+    form.reset();
+    if(FireBase_Stuff.isLoggedIn){
+      FireBase_Stuff.addBook(book);
+    }
   }
 
   const addProgress = (e) => {
@@ -245,6 +275,7 @@ const FORM_Stuff = (() => {
     const bookId = form.closest('[data-id]').getAttribute('data-id');
     LIBRARY.setProgress(bookId, progress);
     DomRef.modelAddProgress.classList.remove('open');
+    form.reset();
   }
 
   const removeBook = () => {}
@@ -420,4 +451,101 @@ modelEditBook.querySelector('#delete-book').addEventListener('click', LIBRARY.re
     return { modelAddBook, modelAddProgress, modelEditBook, editBookPreview, editTitlePreview, editAuthorPreview };
 })();
 
-defaultBooks.forEach((book) => LIBRARY.addBook(book));
+
+/**---- Firebase Area ----*/
+
+/// Dom Short-cut
+const FireBase_Stuff = (() => {
+  let user = null;
+  const userEl = document.querySelector ('#user');
+  const userAvatar = userEl.querySelector('#user-avatar');
+  const userImg = userAvatar.querySelector('img');
+  const userNamePlace = userEl.querySelector('#user-name');
+  const userName = userNamePlace.querySelector('h2');
+  const actionBtnPlace = userEl.querySelector('#user-action');
+  const actionBtn = userEl.querySelector('#user-action button');
+
+  const warning = document.querySelector('.book-placeHolder');
+
+  function isLoggedIn(){
+    return user !== null;
+  }
+
+  // separate method for updating data is not required,
+  // since we are already using .set() method
+  async function addBook(book) {
+    // Add a new message entry to the Firebase database.
+      try {
+        await db.collection(`${user.uid}`).doc(book.id).set({...book});
+      }
+      catch(error) {
+        console.error("Error adding book: ", error);
+      }
+  }
+
+  function loadBooks() {
+    // Create the query to load the last 12 messages and listen for new ones.
+    const books = db.collection(user.uid);
+
+    books.get().then(snapshot => {
+
+        snapshot.docs.forEach(doc => {
+          LIBRARY.loadBook(doc.data());
+        });
+      });
+  }
+
+
+  function deleteBook(id) {
+      db.collection(user.uid).doc(id).delete().then(() => {
+        console.log("Document successfully deleted!");
+    }).catch((error) => {
+        console.error("Error removing document: ", error);
+    });
+  }
+
+  firebase.auth().onAuthStateChanged((_user) => {
+    user = _user || null;
+    updateStatus(_user)
+
+  });
+
+  function signIn(){
+    const provider = new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(provider)
+  }
+  
+  function signOut() {
+    firebase.auth().signOut();
+  }
+
+  function updateStatus(_user){
+        // sign in status
+        userEl.innerHTML = '';
+        actionBtnPlace.innerHTML = '';
+        document.querySelector('.library').innerHTML = '';
+        if(_user){
+          // it should be under UI_stuff object
+          userImg.src = _user.photoURL;
+          userName.textContent = _user.displayName;
+          const signOutBtn = actionBtn.cloneNode(true)
+          signOutBtn.querySelector('span').className = 'mdi mdi-logout mdi-24px';
+          signOutBtn.addEventListener('click', signOut);
+          actionBtnPlace.appendChild(signOutBtn);
+          userEl.append(userAvatar, userNamePlace)
+          warning.setAttribute('hidden', true);
+          loadBooks();
+        }else{
+          warning.removeAttribute('hidden');
+          const signInBtn = actionBtn.cloneNode(true)
+          signInBtn.querySelector('span').className = 'mdi mdi-login mdi-24px';
+          signInBtn.addEventListener('click', signIn);
+          actionBtnPlace.appendChild(signInBtn);
+          
+        }
+        userEl.appendChild(actionBtnPlace);
+      }
+
+
+      return {addBook , isLoggedIn, deleteBook };
+})()

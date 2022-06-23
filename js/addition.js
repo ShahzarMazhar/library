@@ -21,11 +21,6 @@ const defaultBooks = [
   }
 ];
 
-const defaultSettings = {
-  sortMode: 'Recent',
-  bookCount: 0,
-  activeOption: 0,
-};
 
 const CUSTOM_VALIDITY_MESSAGES = {
   title:{

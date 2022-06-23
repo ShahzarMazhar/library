@@ -1,10 +1,21 @@
 .main-section{
+
     .library{
         display: flex;
         gap: 30px;
         padding: 20px;
         flex-wrap: wrap;
         justify-content: center;
+
+
+        &:empty{
+            &:before{
+                content: 'No books found, to add book please click on plus (+) button at bottom right corner;';
+                max-width: 300px;
+                text-align: center;
+            }
+            
+        }
         
         .card{
             
@@ -136,4 +147,12 @@
             }
         }
     }
+}
+
+.book-placeHolder{
+    position: absolute;
+    z-index: 999;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
 }

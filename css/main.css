@@ -22,6 +22,16 @@ html {
 .main-header {
   height: 120px;
   background-color: var(--primary-color);
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  padding: 0 2rem;
 }
 
 .main-header #logo {
@@ -31,10 +41,46 @@ html {
 
 .main-header svg {
   height: 100%;
-  width: 100%;
   fill: var(--light-text-color);
   -webkit-filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.39));
           filter: drop-shadow(2px 2px 3px rgba(0, 0, 0, 0.39));
+}
+
+.main-header #user {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  gap: 0.5rem;
+  color: #323232;
+}
+
+.main-header #user #user-avatar {
+  height: 35px;
+  width: 35px;
+  border-radius: 50%;
+  border: 2px solid var(--light-text-color);
+}
+
+.main-header #user #user-avatar img {
+  height: 100%;
+  width: 100%;
+  border-radius: 50%;
+}
+
+.main-header #user #user-action button {
+  color: #505050;
+  padding: 5px;
+  font-size: 1rem;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.main-header #user #user-action button:hover {
+  color: black;
 }
 
 .main-section {
@@ -42,6 +88,9 @@ html {
 }
 
 .main-section header {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -52,6 +101,8 @@ html {
       -ms-flex-pack: justify;
           justify-content: space-between;
   border-bottom: 1px solid var(--main-line-color);
+  z-index: 1;
+  background-color: white;
 }
 
 .main-section header h2 {
@@ -101,6 +152,12 @@ html {
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
+}
+
+.main-section .library:empty:before {
+  content: 'No books found, to add book please click on plus (+) button at bottom right corner;';
+  max-width: 300px;
+  text-align: center;
 }
 
 .main-section .library .card .book {
@@ -231,6 +288,15 @@ html {
 
 .main-section .library .card ul li:hover::after {
   width: 80%;
+}
+
+.book-placeHolder {
+  position: absolute;
+  z-index: 999;
+  bottom: 20px;
+  left: 50%;
+  -webkit-transform: translateX(-50%);
+          transform: translateX(-50%);
 }
 
 .add-book-form {
