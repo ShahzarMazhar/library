@@ -8,7 +8,7 @@ Another simple app assignment, assign by [TheOdinProjects](https://www.theodinpr
 - Basic do’s and don’t’s of prototypical inheritance.
 
 ## About This Project
-This library app where we can make note of books read progress, add and delete books etc. Book can be sorted by title, author, or recently added.
+This library app where we can make note of books read progress, add and delete books etc. Book can be sorted by title, author, or recently added. Now user can save their progress and load it back by logging in with their google account.
 
 
 ## Preview
