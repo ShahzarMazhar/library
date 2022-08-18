@@ -38,9 +38,7 @@ const LIBRARY = (() => {
     const _book = new Book({...book, id: book.id || getNextId()});
     books.push(_book);
     UI_Stuff.addBook(_book);
-    if(FireBase_Stuff.isLoggedIn){
-      FireBase_Stuff.addBook(_book);
-    }
+    FireBase_Stuff.addBook(_book);
   }
 
   const loadBook = (book) => {
@@ -58,9 +56,7 @@ const LIBRARY = (() => {
     if(confirm(`Are you sure, you want to delete "${book.title}" by "${book.author}"?`)){
       document.querySelector(`.card[data-id="${id}"]`).remove();
       books.splice(books.indexOf(book), 1);
-      if(FireBase_Stuff.isLoggedIn){
-        FireBase_Stuff.deleteBook(id);
-      }
+      FireBase_Stuff.deleteBook(id);
     }
   }
 
@@ -68,9 +64,7 @@ const LIBRARY = (() => {
     const book = books.find(book => book.id === id);
     book.setProgress = progress;
     UI_Stuff.updateBook(book);
-    if(FireBase_Stuff.isLoggedIn){
-      FireBase_Stuff.addBook(book);
-    }
+    FireBase_Stuff.addBook(book);
   }
 
   const getNextId = () => `book-${id++}`;
@@ -263,9 +257,7 @@ const FORM_Stuff = (() => {
     UI_Stuff.updateBook(book);
     DomRef.modelEditBook.classList.remove('open');
     form.reset();
-    if(FireBase_Stuff.isLoggedIn){
-      FireBase_Stuff.addBook(book);
-    }
+    FireBase_Stuff.addBook(book);
   }
 
   const addProgress = (e) => {
@@ -475,33 +467,39 @@ const FireBase_Stuff = (() => {
   // since we are already using .set() method
   async function addBook(book) {
     // Add a new message entry to the Firebase database.
+    if(isLoggedIn()){
       try {
         await db.collection(`${user.uid}`).doc(book.id).set({...book});
       }
       catch(error) {
         console.error("Error adding book: ", error);
       }
-  }
+  }}
 
   function loadBooks() {
     // Create the query to load the last 12 messages and listen for new ones.
-    const books = db.collection(user.uid);
+    if(isLoggedIn()){
 
-    books.get().then(snapshot => {
-
+      const books = db.collection(user.uid);
+      
+      books.get().then(snapshot => {
+        
         snapshot.docs.forEach(doc => {
           LIBRARY.loadBook(doc.data());
         });
       });
+    }
   }
 
 
   function deleteBook(id) {
+    if(isLoggedIn()){
       db.collection(user.uid).doc(id).delete().then(() => {
         console.log("Document successfully deleted!");
-    }).catch((error) => {
-        console.error("Error removing document: ", error);
-    });
+      }).catch((error) => {
+          console.error("Error removing document: ", error);
+      });
+    }
   }
 
   firebase.auth().onAuthStateChanged((_user) => {
