@@ -1,5 +1,5 @@
 # The Library
-Another simple app assignment, assign by [TheOdinProjects](https://www.theodinproject.com/lessons/node-path-javascript-library).
+Another simple app [Library](https://www.theodinproject.com/lessons/node-path-javascript-library), assign by [TheOdinProjects](https://www.theodinproject.com).
 
 ## Learning Outcomes Summary
 - Quick review of foundational concepts
